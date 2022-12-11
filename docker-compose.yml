@@ -1,0 +1,45 @@
+version: '3.8'
+
+networks:
+  spring-test:
+    driver: bridge
+    name: spring-test
+
+volumes:
+  spring-test-repo:
+    name: "spring-test-repo-data"
+  spring-test-db:
+    name: "spring-test-db-data"
+
+services:
+  app:
+    image: amazoncorretto:11
+    user: 1000:1000
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - spring-test-repo:/root/.m2/repository
+      - "./:/app"
+    ports:
+      - "4000:4000"
+      - '6060:6060'
+    command: >
+      /bin/bash -c "./mvnw spring-boot:run"
+    env_file:
+      - .env
+    networks:
+      - spring-test
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - spring-test-db:/data/db
+    restart: unless-stopped
+    networks:
+      - spring-test
